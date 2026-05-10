@@ -9,7 +9,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - parking-postgres-data:/var/lib/postgresql/data
-      - ./scripts:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -50,6 +49,69 @@ services:
       - "8081:8081"
     depends_on:
       - parking-auth-service
+    networks:
+      - parking-network
+
+  parking-location-service:
+    build:
+      context: ../parking-location-service
+    container_name: parking-location-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      PARKING_JWT_SECRET: ${PARKING_JWT_SECRET}
+    ports:
+      - "8083:8083"
+    depends_on:
+      parking-postgres:
+        condition: service_healthy
+      parking-auth-service:
+        condition: service_started
+    networks:
+      - parking-network
+
+  parking-booking-service:
+    build:
+      context: ../parking-booking-service
+    container_name: parking-booking-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      PARKING_JWT_SECRET: ${PARKING_JWT_SECRET}
+    ports:
+      - "8084:8084"
+    depends_on:
+      parking-postgres:
+        condition: service_healthy
+      parking-auth-service:
+        condition: service_started
+    networks:
+      - parking-network
+
+  parking-payment-service:
+    build:
+      context: ../parking-payment-service
+    container_name: parking-payment-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8085
+      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      PARKING_JWT_SECRET: ${PARKING_JWT_SECRET}
+    ports:
+      - "8085:8085"
+    depends_on:
+      parking-postgres:
+        condition: service_healthy
+      parking-auth-service:
+        condition: service_started
     networks:
       - parking-network
 

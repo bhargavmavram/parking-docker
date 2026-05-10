@@ -11,13 +11,116 @@ services:
       - "5432:5432"
     volumes:
       - parking-postgres-data:/var/lib/postgresql/data
-      - ./scripts:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U parking_user -d parking_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - parking-network
+
+  parking-auth-service:
+    build:
+      context: ../parking-auth-service
+    container_name: parking-auth-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/parking_db
+      SPRING_DATASOURCE_USERNAME: parking_user
+      SPRING_DATASOURCE_PASSWORD: parking_password
+      PARKING_JWT_SECRET: parking-development-secret-key-change-me-please-32bytes-minimum
+      PARKING_JWT_EXPIRATION_MINUTES: 60
+    ports:
+      - "8082:8082"
+    depends_on:
+      parking-postgres:
+        condition: service_healthy
+    networks:
+      - parking-network
+
+  parking-api-service:
+    build:
+      context: ../parking-api-service
+    container_name: parking-api-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8081
+      PARKING_JWT_SECRET: parking-development-secret-key-change-me-please-32bytes-minimum
+    ports:
+      - "8081:8081"
+    depends_on:
+      - parking-auth-service
+    networks:
+      - parking-network
+
+  parking-location-service:
+    build:
+      context: ../parking-location-service
+    container_name: parking-location-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/parking_db
+      SPRING_DATASOURCE_USERNAME: parking_user
+      SPRING_DATASOURCE_PASSWORD: parking_password
+      PARKING_JWT_SECRET: parking-development-secret-key-change-me-please-32bytes-minimum
+    ports:
+      - "8083:8083"
+    depends_on:
+      parking-postgres:
+        condition: service_healthy
+      parking-auth-service:
+        condition: service_started
+    networks:
+      - parking-network
+
+  parking-booking-service:
+    build:
+      context: ../parking-booking-service
+    container_name: parking-booking-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/parking_db
+      SPRING_DATASOURCE_USERNAME: parking_user
+      SPRING_DATASOURCE_PASSWORD: parking_password
+      PARKING_JWT_SECRET: parking-development-secret-key-change-me-please-32bytes-minimum
+    ports:
+      - "8084:8084"
+    depends_on:
+      parking-postgres:
+        condition: service_healthy
+      parking-auth-service:
+        condition: service_started
+    networks:
+      - parking-network
+
+  parking-payment-service:
+    build:
+      context: ../parking-payment-service
+    container_name: parking-payment-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8085
+      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/parking_db
+      SPRING_DATASOURCE_USERNAME: parking_user
+      SPRING_DATASOURCE_PASSWORD: parking_password
+      PARKING_JWT_SECRET: parking-development-secret-key-change-me-please-32bytes-minimum
+    ports:
+      - "8085:8085"
+    depends_on:
+      parking-postgres:
+        condition: service_healthy
+      parking-auth-service:
+        condition: service_started
+    networks:
+      - parking-network
 
 volumes:
   parking-postgres-data:
     name: parking-postgres-data
+
+networks:
+  parking-network:
+    name: parking-network
