@@ -1,22 +1,4 @@
 services:
-  parking-postgres:
-    image: postgres:16-alpine
-    container_name: parking-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - parking-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - parking-network
-
   parking-auth-service:
     build:
       context: ../parking-auth-service
@@ -24,16 +6,13 @@ services:
     restart: unless-stopped
     environment:
       SERVER_PORT: 8082
-      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PARKING_JWT_SECRET: ${PARKING_JWT_SECRET}
       PARKING_JWT_EXPIRATION_MINUTES: ${PARKING_JWT_EXPIRATION_MINUTES}
     ports:
       - "8082:8082"
-    depends_on:
-      parking-postgres:
-        condition: service_healthy
     networks:
       - parking-network
 
@@ -59,15 +38,13 @@ services:
     restart: unless-stopped
     environment:
       SERVER_PORT: 8083
-      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PARKING_JWT_SECRET: ${PARKING_JWT_SECRET}
     ports:
       - "8083:8083"
     depends_on:
-      parking-postgres:
-        condition: service_healthy
       parking-auth-service:
         condition: service_started
     networks:
@@ -80,15 +57,13 @@ services:
     restart: unless-stopped
     environment:
       SERVER_PORT: 8084
-      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PARKING_JWT_SECRET: ${PARKING_JWT_SECRET}
     ports:
       - "8084:8084"
     depends_on:
-      parking-postgres:
-        condition: service_healthy
       parking-auth-service:
         condition: service_started
     networks:
@@ -101,23 +76,17 @@ services:
     restart: unless-stopped
     environment:
       SERVER_PORT: 8085
-      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PARKING_JWT_SECRET: ${PARKING_JWT_SECRET}
     ports:
       - "8085:8085"
     depends_on:
-      parking-postgres:
-        condition: service_healthy
       parking-auth-service:
         condition: service_started
     networks:
       - parking-network
-
-volumes:
-  parking-postgres-data:
-    name: parking-postgres-data
 
 networks:
   parking-network:
