@@ -1,3 +1,9 @@
+x-awslogs-defaults: &awslogs-defaults
+  driver: awslogs
+  options:
+    awslogs-region: eu-west-1
+    awslogs-create-group: "true"
+
 services:
   parking-auth-service:
     build:
@@ -13,6 +19,13 @@ services:
       PARKING_JWT_EXPIRATION_MINUTES: ${PARKING_JWT_EXPIRATION_MINUTES}
     ports:
       - "8082:8082"
+    logging:
+      <<: *awslogs-defaults
+      options:
+        awslogs-region: eu-west-1
+        awslogs-create-group: "true"
+        awslogs-group: /parking/auth-service
+        awslogs-stream: parking-auth-service
     networks:
       - parking-network
 
@@ -28,6 +41,13 @@ services:
       - "8081:8081"
     depends_on:
       - parking-auth-service
+    logging:
+      <<: *awslogs-defaults
+      options:
+        awslogs-region: eu-west-1
+        awslogs-create-group: "true"
+        awslogs-group: /parking/api-service
+        awslogs-stream: parking-api-service
     networks:
       - parking-network
 
@@ -47,6 +67,13 @@ services:
     depends_on:
       parking-auth-service:
         condition: service_started
+    logging:
+      <<: *awslogs-defaults
+      options:
+        awslogs-region: eu-west-1
+        awslogs-create-group: "true"
+        awslogs-group: /parking/location-service
+        awslogs-stream: parking-location-service
     networks:
       - parking-network
 
@@ -66,6 +93,13 @@ services:
     depends_on:
       parking-auth-service:
         condition: service_started
+    logging:
+      <<: *awslogs-defaults
+      options:
+        awslogs-region: eu-west-1
+        awslogs-create-group: "true"
+        awslogs-group: /parking/booking-service
+        awslogs-stream: parking-booking-service
     networks:
       - parking-network
 
@@ -85,6 +119,13 @@ services:
     depends_on:
       parking-auth-service:
         condition: service_started
+    logging:
+      <<: *awslogs-defaults
+      options:
+        awslogs-region: eu-west-1
+        awslogs-create-group: "true"
+        awslogs-group: /parking/payment-service
+        awslogs-stream: parking-payment-service
     networks:
       - parking-network
 
